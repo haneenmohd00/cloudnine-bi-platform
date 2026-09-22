@@ -54,29 +54,49 @@ class ReportAIService:
         return str(content).strip()
 
     @staticmethod
-    def build_schema_context(dataset):
+    def build_schema_context(datasets):
 
         from services.bi_tools import _load_dataset
 
-        dataframe = _load_dataset(
-            dataset
-        )
+        if not isinstance(
+            datasets,
+            (list, tuple)
+        ):
+            datasets = [datasets]
 
-        columns = dataframe.columns.tolist()
+        schemas = []
 
-        return {
-            "dataset_id": dataset.id,
-            "dataset_name": dataset.original_filename,
-            "columns": columns,
-        }
+        for dataset in datasets:
+
+            dataframe = _load_dataset(
+                dataset
+            )
+
+            schemas.append(
+                {
+                    "dataset_id": dataset.id,
+                    "dataset_name": (
+                        dataset.original_filename
+                        or dataset.source_name
+                    ),
+                    "rows": len(dataframe),
+                    "columns": (
+                        dataframe
+                        .columns
+                        .tolist()
+                    )
+                }
+            )
+
+        return schemas
 
     def generate_query(
         self,
         question,
-        dataset):
+        datasets):
 
         schema = self.build_schema_context(
-            dataset
+            datasets
         )
 
         system_prompt = f"""
@@ -157,7 +177,39 @@ Example:
     "alias": "Total Net Revenue"
 }}
 
-5. order_by
+5. joins
+
+Use joins when the requested columns are spread across
+multiple datasets.
+
+Each join MUST contain:
+
+{{
+    "dataset_id": 2,
+    "left_column": "site",
+    "right_column": "site",
+    "how": "left"
+}}
+
+Supported join types:
+
+left
+inner
+right
+outer
+
+IMPORTANT:
+
+- Only join datasets when necessary.
+- Only use columns that actually exist.
+- Prefer a LEFT join when the user asks for records
+  from the primary/base dataset and additional information
+  from another dataset.
+- Use a common column such as "site" when it exists
+  in both datasets.
+- Do not invent join keys.
+
+6. order_by
 
 Each item contains:
 
@@ -169,7 +221,7 @@ direction must be:
 asc
 desc
 
-6. limit
+7. limit
 
 Use null when the user did not request a limit.
 
@@ -186,10 +238,18 @@ IMPORTANT RULES:
 - If the user asks for specific columns, return only those columns.
 - Use filters when the user specifies conditions.
 - Use group_by and aggregations only when aggregation is requested.
+- base_dataset_id must be the dataset containing the primary
+  records or primary metric requested by the user.
+- Every dataset_id in joins must correspond to one of the
+  available datasets.
+- If the requested information exists in only one dataset,
+  do not create a join.
 
 OUTPUT FORMAT:
 
 {{
+    "base_dataset_id": 3,
+    "joins": [],
     "columns": ["*"],
     "filters": [],
     "group_by": [],
@@ -209,7 +269,7 @@ OUTPUT RULES:
 - order_by must reference an actual output column.
 - If an aggregation has an alias, order_by should use that alias.
 
-Example:
+Example 1:
 
 User:
 Show the top 10 sites by total net revenue.
@@ -220,6 +280,52 @@ Output:
     "columns": ["site", "Total Net Revenue"],
     "filters": [],
     "group_by": ["site"],
+    "aggregations": [
+        {{
+            "column": "net",
+            "aggregation": "sum",
+            "alias": "Total Net Revenue"
+        }}
+    ],
+    "order_by": [
+        {{
+            "column": "Total Net Revenue",
+            "direction": "desc"
+        }}
+    ],
+    "limit": 10
+}}
+
+Example 2:
+
+User:
+Find the top 10 sites by total net revenue and show
+their center and regional director.
+
+Output:
+
+{{
+    "base_dataset_id": 3,
+    "joins": [
+        {{
+            "dataset_id": 2,
+            "left_column": "site",
+            "right_column": "site",
+            "how": "left"
+        }}
+    ],
+    "columns": [
+        "site",
+        "Total Net Revenue",
+        "center",
+        "regional_director"
+    ],
+    "filters": [],
+    "group_by": [
+        "site",
+        "center",
+        "regional_director"
+    ],
     "aggregations": [
         {{
             "column": "net",

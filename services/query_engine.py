@@ -174,6 +174,385 @@ class QueryEngine:
 
         return dataframe
 
+
+    @classmethod
+    def execute_multi_dataset(cls,datasets,query):
+        """
+        Execute a query across multiple datasets.
+
+        The query must specify:
+
+        base_dataset_id
+
+        joins:
+        [
+            {
+                "dataset_id": 2,
+                "left_column": "site",
+                "right_column": "site",
+                "how": "left"
+            }
+        ]
+
+        Example:
+
+        {
+            "base_dataset_id": 3,
+
+            "joins": [
+                {
+                    "dataset_id": 2,
+                    "left_column": "site",
+                    "right_column": "site",
+                    "how": "left"
+                }
+            ],
+
+            "columns": [
+                "site",
+                "net",
+                "center",
+                "regional_director"
+            ],
+
+            "filters": [],
+
+            "group_by": [],
+
+            "aggregations": [],
+
+            "order_by": [],
+
+            "limit": 10
+        }
+        """
+
+        if not datasets:
+
+            raise ValueError(
+                "At least one dataset is required."
+            )
+
+        if not isinstance(query, dict):
+
+            raise ValueError(
+                "Query must be a dictionary."
+            )
+
+        # =====================================================
+        # Build dataset lookup
+        # =====================================================
+
+        dataset_map = {
+            int(dataset.id): dataset
+            for dataset in datasets
+        }
+
+        base_dataset_id = query.get(
+            "base_dataset_id"
+        )
+
+        if base_dataset_id is None:
+
+            # Backwards-compatible fallback
+            base_dataset_id = datasets[0].id
+
+        try:
+
+            base_dataset_id = int(
+                base_dataset_id
+            )
+
+        except (TypeError, ValueError):
+
+            raise ValueError(
+                "base_dataset_id must be an integer."
+            )
+
+        if base_dataset_id not in dataset_map:
+
+            raise ValueError(
+                f"Base dataset {base_dataset_id} "
+                "is not available."
+            )
+
+        # =====================================================
+        # Load base dataframe
+        # =====================================================
+
+        base_dataset = dataset_map[
+            base_dataset_id
+        ]
+
+        dataframe = _load_dataset(
+            base_dataset
+        ).copy()
+
+        # =====================================================
+        # Perform joins
+        # =====================================================
+
+        joins = query.get(
+            "joins",
+            []
+        )
+
+        joined_dataset_ids = {
+            base_dataset_id
+        }
+
+        for join in joins:
+
+            if not isinstance(join, dict):
+
+                raise ValueError(
+                    "Each join must be an object."
+                )
+
+            target_dataset_id = join.get(
+                "dataset_id"
+            )
+
+            left_column = join.get(
+                "left_column"
+            )
+
+            right_column = join.get(
+                "right_column"
+            )
+
+            join_type = join.get(
+                "how",
+                "left"
+            ).lower()
+
+            if target_dataset_id is None:
+
+                raise ValueError(
+                    "Join dataset_id is required."
+                )
+
+            try:
+
+                target_dataset_id = int(
+                    target_dataset_id
+                )
+
+            except (TypeError, ValueError):
+
+                raise ValueError(
+                    "Join dataset_id must be an integer."
+                )
+
+            if target_dataset_id not in dataset_map:
+
+                raise ValueError(
+                    f"Join dataset {target_dataset_id} "
+                    "is not available."
+                )
+
+            if target_dataset_id in joined_dataset_ids:
+
+                raise ValueError(
+                    f"Dataset {target_dataset_id} "
+                    "has already been joined."
+                )
+
+            if not left_column or not right_column:
+
+                raise ValueError(
+                    "Both left_column and right_column "
+                    "are required for a join."
+                )
+
+            if join_type not in {
+                "left",
+                "inner",
+                "right",
+                "outer"
+            }:
+
+                raise ValueError(
+                    f"Unsupported join type: {join_type}"
+                )
+
+            target_dataset = dataset_map[
+                target_dataset_id
+            ]
+
+            target_dataframe = _load_dataset(
+                target_dataset
+            ).copy()
+
+            # ---------------------------------------------
+            # Validate join columns
+            # ---------------------------------------------
+
+            if left_column not in dataframe.columns:
+
+                raise ValueError(
+                    f"Join column '{left_column}' "
+                    "does not exist in the current dataset."
+                )
+
+            if right_column not in target_dataframe.columns:
+
+                raise ValueError(
+                    f"Join column '{right_column}' "
+                    f"does not exist in dataset "
+                    f"{target_dataset_id}."
+                )
+
+            # ---------------------------------------------
+            # Avoid duplicate non-key column collisions
+            # ---------------------------------------------
+
+            overlapping_columns = (
+                set(dataframe.columns)
+                & set(target_dataframe.columns)
+            )
+
+            overlapping_columns.discard(
+                left_column
+            )
+
+            if right_column in overlapping_columns:
+
+                overlapping_columns.discard(
+                    right_column
+                )
+
+            rename_map = {}
+
+            for column in overlapping_columns:
+
+                rename_map[column] = (
+                    f"{column}_"
+                    f"dataset_{target_dataset_id}"
+                )
+
+            if rename_map:
+
+                target_dataframe = (
+                    target_dataframe
+                    .rename(
+                        columns=rename_map
+                    )
+                )
+
+            # ---------------------------------------------
+            # Perform merge
+            # ---------------------------------------------
+
+            dataframe = dataframe.merge(
+                target_dataframe,
+                how=join_type,
+                left_on=left_column,
+                right_on=right_column,
+                suffixes=(
+                    "",
+                    f"_dataset_{target_dataset_id}"
+                )
+            )
+
+            joined_dataset_ids.add(
+                target_dataset_id
+            )
+
+        # =====================================================
+        # Apply filters
+        # =====================================================
+
+        dataframe = cls._apply_filters(
+            dataframe,
+            query.get(
+                "filters",
+                []
+            )
+        )
+
+        # =====================================================
+        # Grouping / aggregation
+        # =====================================================
+
+        group_by = query.get(
+            "group_by",
+            []
+        )
+
+        aggregations = query.get(
+            "aggregations",
+            []
+        )
+
+        if group_by or aggregations:
+
+            dataframe = cls._apply_grouping(
+                dataframe=dataframe,
+                group_by=group_by,
+                aggregations=aggregations
+            )
+
+        # =====================================================
+        # Select columns
+        # =====================================================
+
+        columns = query.get(
+            "columns",
+            ["*"]
+        )
+
+        dataframe = cls._select_columns(
+            dataframe,
+            columns
+        )
+
+        # =====================================================
+        # Ordering
+        # =====================================================
+
+        dataframe = cls._apply_ordering(
+            dataframe,
+            query.get(
+                "order_by",
+                []
+            )
+        )
+
+        # =====================================================
+        # Limit
+        # =====================================================
+
+        limit = query.get(
+            "limit"
+        )
+
+        if limit is not None:
+
+            try:
+
+                limit = int(limit)
+
+            except (TypeError, ValueError):
+
+                raise ValueError(
+                    "Limit must be an integer."
+                )
+
+            if limit < 1:
+
+                raise ValueError(
+                    "Limit must be greater than zero."
+                )
+
+            dataframe = dataframe.head(
+                limit
+            )
+
+        return dataframe.reset_index(
+            drop=True
+        )
+    
     # ==========================================================
     # COLUMN VALIDATION
     # ==========================================================
