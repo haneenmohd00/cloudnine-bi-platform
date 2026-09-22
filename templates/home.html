@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+
+{% block title %}
+Business Overview | Cloudnine BI
+{% endblock %}
+
+{% block page_title %}
+Business Overview
+{% endblock %}
+
+{% block content %}
+
+<div class="overview-page">
+
+    <div class="welcome-section">
+
+        <h2>Business Overview</h2>
+
+        <p>
+            Your AI-powered view of what is happening
+            across the business.
+        </p>
+
+    </div>
+
+
+    {% if selected_datasets %}
+
+        <!-- KPI CARDS -->
+
+        <div class="kpi-grid">
+
+            <div class="kpi-card">
+
+                <span class="kpi-label">
+                    Total Revenue
+                </span>
+
+                <h2>
+                    {% if overview.total_revenue is not none %}
+                        ₹{{ "{:,.2f}".format(
+                            overview.total_revenue
+                        ) }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </h2>
+
+            </div>
+
+
+            <div class="kpi-card">
+
+                <span class="kpi-label">
+                    Transactions
+                </span>
+
+                <h2>
+                    {% if overview.total_transactions is not none %}
+                        {{ "{:,}".format(
+                            overview.total_transactions
+                        ) }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </h2>
+
+            </div>
+
+
+            <div class="kpi-card">
+
+                <span class="kpi-label">
+                    Average Transaction
+                </span>
+
+                <h2>
+                    {% if overview.average_transaction is not none %}
+                        ₹{{ "{:,.2f}".format(
+                            overview.average_transaction
+                        ) }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </h2>
+
+            </div>
+
+
+            <div class="kpi-card">
+
+                <span class="kpi-label">
+                    Quantity
+                </span>
+
+                <h2>
+                    {% if overview.total_quantity is not none %}
+                        {{ "{:,.0f}".format(
+                            overview.total_quantity
+                        ) }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </h2>
+
+            </div>
+
+        </div>
+
+
+        <!-- AI BUSINESS SUMMARY -->
+
+       <div class="ai-overview-card">
+
+    <div class="overview-card-header">
+
+        <h2>
+            🤖 AI Business Summary
+        </h2>
+
+        <span>
+            Powered by local AI
+        </span>
+
+    </div>
+
+
+    <p class="ai-summary-description">
+
+        Get an AI-powered interpretation of your
+        current business performance.
+
+    </p>
+
+
+    {% if ai_summary %}
+
+        <div
+            class="ai-summary-content"
+            id="homeAISummary"
+        >
+            {{ ai_summary | safe }}
+        </div>
+
+    {% else %}
+
+        <div
+            class="home-ai-empty"
+            id="homeAIEmpty"
+        >
+
+            <p>
+                AI analysis has not been generated yet.
+            </p>
+
+            <button
+                type="button"
+                id="generateHomeAI"
+                class="overview-button"
+            >
+                Generate AI Business Summary
+            </button>
+
+        </div>
+
+
+        <div
+            id="homeAILoading"
+            style="display:none;"
+        >
+
+            <p>
+                🤖 Analysing your business data...
+            </p>
+
+            <p>
+                This may take a moment.
+            </p>
+
+        </div>
+
+
+        <div
+            id="homeAIResult"
+            class="ai-summary-content"
+            style="display:none;"
+        >
+        </div>
+
+    {% endif %}
+
+    </div>
+
+
+        <!-- SITE PERFORMANCE -->
+
+        {% if overview.site_performance %}
+
+        <div class="overview-card">
+
+            <h2>
+                📊 Top Sites by Revenue
+            </h2>
+
+            <div class="site-list">
+
+                {% for site, revenue in
+                   overview.site_performance.items() %}
+
+                    <div class="site-row">
+
+                        <span>
+                            {{ site }}
+                        </span>
+
+                        <strong>
+                            ₹{{ "{:,.2f}".format(revenue) }}
+                        </strong>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+        {% endif %}
+
+
+        <!-- SELECTED DATA -->
+
+        <div class="overview-card">
+
+            <h2>
+                🗂️ Data Used for This Overview
+            </h2>
+
+            {% for dataset in selected_datasets %}
+
+                <div class="dataset-summary-row">
+
+                    <span>
+                        {{ dataset.source_name }}
+                    </span>
+
+                    <span>
+                        {{ dataset.row_count }} rows
+                    </span>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+
+    {% else %}
+
+        <!-- NO DATA SELECTED -->
+
+        <div class="empty-overview">
+
+            <div class="empty-icon">
+                📊
+            </div>
+
+            <h2>
+                Select data to generate your
+                Business Overview
+            </h2>
+
+            <p>
+                Go to Datasets and select the data sources
+                you want to analyze.
+            </p>
+
+            <a
+                href="{{ url_for('main.datasets') }}"
+                class="overview-button"
+            >
+                Go to Datasets
+            </a>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        const button =
+            document.getElementById(
+                "generateHomeAI"
+            );
+
+        const loading =
+            document.getElementById(
+                "homeAILoading"
+            );
+
+        const empty =
+            document.getElementById(
+                "homeAIEmpty"
+            );
+
+        const result =
+            document.getElementById(
+                "homeAIResult"
+            );
+
+
+        if (!button) {
+            return;
+        }
+
+
+        button.addEventListener(
+            "click",
+            async function () {
+
+                button.disabled = true;
+
+                button.innerText =
+                    "Analysing...";
+
+                if (empty) {
+
+                    empty.style.display =
+                        "none";
+
+                }
+
+                if (loading) {
+
+                    loading.style.display =
+                        "block";
+
+                }
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            "{{ url_for('main.home_ai_summary') }}",
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                }
+                            }
+                        );
+
+
+                    const data =
+                        await response.json();
+
+
+                    if (
+                        data.success &&
+                        result
+                    ) {
+
+                        result.innerHTML =
+                            data.summary;
+
+                        result.style.display =
+                            "block";
+
+                    } else {
+
+                        if (result) {
+
+                            result.innerHTML =
+                                "<p>" +
+                                (
+                                    data.message ||
+                                    "Unable to generate AI analysis."
+                                ) +
+                                "</p>";
+
+                            result.style.display =
+                                "block";
+                        }
+
+                    }
+
+                } catch (error) {
+
+                    console.error(
+                        "Home AI error:",
+                        error
+                    );
+
+                    if (result) {
+
+                        result.innerHTML =
+                            "<p>" +
+                            "Unable to generate AI analysis." +
+                            "</p>";
+
+                        result.style.display =
+                            "block";
+                    }
+
+                } finally {
+
+                    if (loading) {
+
+                        loading.style.display =
+                            "none";
+
+                    }
+
+                    button.disabled =
+                        false;
+
+                    button.innerText =
+                        "Generate AI Business Summary";
+                }
+
+            }
+        );
+
+    }
+);
+
+</script>
+{% endblock %}

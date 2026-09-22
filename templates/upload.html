@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Dataset | Cloudnine BI{% endblock %}
+
+{% block page_title %}Upload Dataset{% endblock %}
+
+{% block content %}
+
+<div class="welcome-section">
+
+    <h2>Upload Your Dataset</h2>
+
+    <p>
+        Upload a CSV or Excel file to explore and analyze your data.
+    </p>
+
+    <form
+        action="{{ url_for('main.upload_dataset') }}"
+        method="POST"
+        enctype="multipart/form-data"
+        class="upload-form"
+    >
+
+        <input
+            type="file"
+            name="dataset"
+            accept=".csv,.xlsx,.xls"
+            required
+        >
+
+        <button type="submit">
+            Upload Dataset
+        </button>
+
+    </form>
+
+</div>
+
+{% endblock %}

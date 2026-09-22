@@ -1,0 +1,519 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="report-page">
+
+    <!-- =====================================================
+         HEADER
+         ===================================================== -->
+
+    <div class="report-header">
+
+        <div>
+            <h1>📊 Report Generator</h1>
+
+            <p>
+                Describe the report you need in natural language
+                and let AI generate the data query for you.
+            </p>
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         QUERY BUILDER
+         ===================================================== -->
+
+    <div class="report-card">
+
+        <form
+            method="POST"
+            action="{{ url_for('main.report_generator') }}"
+        >
+
+            <div class="form-group">
+
+                <label for="dataset_id">
+                    Data Source
+                </label>
+
+                <select
+                    id="dataset_id"
+                    name="dataset_id"
+                    required
+                >
+
+                    <option value="">
+                        Select a dataset
+                    </option>
+
+                    {% for dataset in selected_datasets %}
+
+                        <option
+                            value="{{ dataset.id }}"
+                            {% if selected_dataset_id == dataset.id %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ dataset.original_filename }}
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="question">
+                    What report do you need?
+                </label>
+
+                <textarea
+                    id="question"
+                    name="question"
+                    rows="4"
+                    placeholder="Example: Give me all records from site GZBINP"
+                    required
+                >{{ question }}</textarea>
+
+            </div>
+
+
+            <div class="example-prompts">
+
+                <span>Try asking:</span>
+
+                <button
+                    type="button"
+                    onclick="setQuestion(
+                        'Give me all records from site GZBINP'
+                    )"
+                >
+                    All records from a site
+                </button>
+
+                <button
+                    type="button"
+                    onclick="setQuestion(
+                        'Give me patient name, item name, quantity and net for site GZBINP'
+                    )"
+                >
+                    Selected columns
+                </button>
+
+                <button
+                    type="button"
+                    onclick="setQuestion(
+                        'Show the top 10 sites by total net revenue'
+                    )"
+                >
+                    Top 10 sites by revenue
+                </button>
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="generate-button"
+            >
+                🤖 Generate Report
+            </button>
+
+        </form>
+
+    </div>
+
+
+    <!-- =====================================================
+         ERROR
+         ===================================================== -->
+
+    {% if error %}
+
+        <div class="report-error">
+
+            <strong>
+                Unable to generate report
+            </strong>
+
+            <p>
+                {{ error }}
+            </p>
+
+        </div>
+
+    {% endif %}
+
+
+    <!-- =====================================================
+         REPORT RESULT
+         ===================================================== -->
+
+    {% if result_columns %}
+
+        <div class="result-section">
+
+            <!-- Result Header -->
+
+            <div class="result-header">
+
+                <div>
+
+                    <h2>
+                        Generated Report
+                    </h2>
+
+                    <span>
+                        {{ row_count }} total record{% if row_count != 1 %}s{% endif %}
+                    </span>
+
+                </div>
+
+
+                <div class="download-actions">
+
+                    <a
+                        href="{{ url_for(
+                            'main.download_report_csv'
+                        ) }}"
+                        class="download-button"
+                    >
+                        ↓ CSV
+                    </a>
+
+                    <a
+                        href="{{ url_for(
+                            'main.download_report_excel'
+                        ) }}"
+                        class="download-button excel"
+                    >
+                        ↓ Excel
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 RESULT METADATA
+                 ================================================= -->
+
+            <div class="report-metadata">
+
+                <div class="metadata-item">
+
+                    <span class="metadata-label">
+                        Data Source
+                    </span>
+
+                    <strong>
+                        {{ dataset_name }}
+                    </strong>
+
+                </div>
+
+
+                <div class="metadata-item">
+
+                    <span class="metadata-label">
+                        Records
+                    </span>
+
+                    <strong>
+                        {{ row_count }}
+                    </strong>
+
+                </div>
+
+
+                <div class="metadata-item">
+
+                    <span class="metadata-label">
+                        Columns
+                    </span>
+
+                    <strong>
+                        {{ result_columns|length }}
+                    </strong>
+
+                </div>
+
+
+                <div class="metadata-item">
+
+                    <span class="metadata-label">
+                        Showing
+                    </span>
+
+                    <strong>
+
+                        {% if row_count > 0 %}
+
+                            {{ ((current_page - 1) * page_size) + 1 }}
+                            -
+                            {{ [
+                                current_page * page_size,
+                                displayed_rows
+                            ]|min }}
+
+                        {% else %}
+
+                            0
+
+                        {% endif %}
+
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 QUERY SUMMARY
+                 ================================================= -->
+
+            {% if query_summary %}
+
+                <div class="query-summary">
+
+                    <div class="query-summary-icon">
+                        🤖
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Query understood as
+                        </strong>
+
+                        <p>
+                            {{ query_summary }}
+                        </p>
+
+                    </div>
+
+                </div>
+
+            {% endif %}
+
+
+            <!-- =================================================
+                 DISPLAY LIMIT NOTICE
+                 ================================================= -->
+
+            {% if row_count > display_limit %}
+
+                <div class="display-limit-notice">
+
+                    <span>
+                        ℹ️
+                    </span>
+
+                    <div>
+
+                        <strong>
+                            Large result set
+                        </strong>
+
+                        <p>
+                            {{ display_limit }} records are available
+                            for browser viewing. CSV and Excel downloads
+                            contain all {{ row_count }} matching records.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            {% endif %}
+
+
+            <!-- =================================================
+                 TABLE
+                 ================================================= -->
+
+            <div class="table-container">
+
+                <table class="report-table">
+
+                    <thead>
+
+                        <tr>
+
+                            {% for column in result_columns %}
+
+                                <th>
+                                    {{ column }}
+                                </th>
+
+                            {% endfor %}
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for row in result_rows %}
+
+                            <tr>
+
+                                {% for column in result_columns %}
+
+                                    <td>
+                                        {{ row[column] }}
+                                    </td>
+
+                                {% endfor %}
+
+                            </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+            <!-- =================================================
+                 PAGINATION
+                 ================================================= -->
+
+            {% if total_pages > 1 %}
+
+                <div class="report-pagination">
+
+                    {% if current_page > 1 %}
+
+                        <a
+                            href="{{ url_for(
+                                'main.report_generator',
+                                page=current_page - 1
+                            ) }}"
+                            class="pagination-button"
+                        >
+                            ← Previous
+                        </a>
+
+                    {% else %}
+
+                        <span class="pagination-button disabled">
+                            ← Previous
+                        </span>
+
+                    {% endif %}
+
+
+                    <div class="page-numbers">
+
+                        {% for page_number in range(1, total_pages + 1) %}
+
+                            {% if
+                                page_number == 1
+                                or page_number == total_pages
+                                or (
+                                    page_number >= current_page - 2
+                                    and page_number <= current_page + 2
+                                )
+                            %}
+
+                                {% if page_number == current_page %}
+
+                                    <span class="page-number active">
+                                        {{ page_number }}
+                                    </span>
+
+                                {% else %}
+
+                                    <a
+                                        href="{{ url_for(
+                                            'main.report_generator',
+                                            page=page_number
+                                        ) }}"
+                                        class="page-number"
+                                    >
+                                        {{ page_number }}
+                                    </a>
+
+                                {% endif %}
+
+                            {% elif
+                                page_number == 2
+                                and current_page > 4
+                            %}
+
+                                <span class="page-ellipsis">
+                                    ...
+                                </span>
+
+                            {% elif
+                                page_number == total_pages - 1
+                                and current_page < total_pages - 3
+                            %}
+
+                                <span class="page-ellipsis">
+                                    ...
+                                </span>
+
+                            {% endif %}
+
+                        {% endfor %}
+
+                    </div>
+
+
+                    {% if current_page < total_pages %}
+
+                        <a
+                            href="{{ url_for(
+                                'main.report_generator',
+                                page=current_page + 1
+                            ) }}"
+                            class="pagination-button"
+                        >
+                            Next →
+                        </a>
+
+                    {% else %}
+
+                        <span class="pagination-button disabled">
+                            Next →
+                        </span>
+
+                    {% endif %}
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<script>
+
+function setQuestion(question) {
+
+    document.getElementById(
+        "question"
+    ).value = question;
+
+}
+
+</script>
+
+{% endblock %}

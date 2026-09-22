@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}Datasets | Cloudnine BI{% endblock %}
+
+{% block page_title %}Datasets{% endblock %}
+
+{% block content %}
+
+<div class="welcome-section">
+
+    <h2>Datasets & Data Sources</h2>
+
+    <p>
+        Connect your datasets and select the data you want
+        to use for analysis.
+    </p>
+
+</div>
+
+
+<!-- ADD DATA SOURCE -->
+
+<div class="data-source-section">
+
+    <h2>Add Data Source</h2>
+
+    <p>
+        Connect or upload your business data.
+    </p>
+
+
+    <div class="source-grid">
+
+        <a
+            href="{{ url_for('main.upload_dataset') }}"
+            class="source-card active-source"
+        >
+
+            <div class="source-icon">📁</div>
+
+            <h3>Upload File</h3>
+
+            <p>
+                Upload CSV or Excel datasets.
+            </p>
+
+            <span class="source-status">
+                Available
+            </span>
+
+        </a>
+
+
+        <div class="source-card disabled-source">
+
+            <div class="source-icon">🐘</div>
+
+            <h3>PostgreSQL</h3>
+
+            <p>
+                Connect directly to a PostgreSQL database.
+            </p>
+
+            <span class="source-status coming-soon">
+                Coming Soon
+            </span>
+
+        </div>
+
+
+        <div class="source-card disabled-source">
+
+            <div class="source-icon">☁️</div>
+
+            <h3>AWS Athena</h3>
+
+            <p>
+                Connect and analyze data from AWS Athena.
+            </p>
+
+            <span class="source-status coming-soon">
+                Coming Soon
+            </span>
+
+        </div>
+
+
+        <div class="source-card disabled-source">
+
+            <div class="source-icon">📊</div>
+
+            <h3>Zoho Analytics</h3>
+
+            <p>
+                Connect data available in Zoho Analytics.
+            </p>
+
+            <span class="source-status coming-soon">
+                Coming Soon
+            </span>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- SELECT DATASETS -->
+
+<div class="dataset-section">
+
+    <div class="dataset-section-header">
+
+        <div>
+
+            <h2>Connected Datasets</h2>
+
+            <p>
+                Select one or more datasets for your analysis.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    {% if datasets %}
+
+        <form
+            method="POST"
+            action="{{ url_for('main.select_datasets') }}"
+        >
+
+            <div class="dataset-list">
+
+                {% for dataset in datasets %}
+
+                    <label
+                        class="dataset-card selectable-dataset"
+                    >
+
+                        <input
+                            type="checkbox"
+                            name="dataset_ids"
+                            value="{{ dataset.id }}"
+
+                            {% if dataset.id in selected_dataset_ids %}
+                                checked
+                            {% endif %}
+                        >
+
+
+                        <div class="dataset-info">
+
+                            <h3>
+                                {{ dataset.source_name }}
+                            </h3>
+
+                            <p>
+
+                                {{ dataset.row_count }} rows
+
+                                •
+
+                                {{ dataset.column_count }} columns
+
+                                •
+
+                                {{ dataset.source_type }}
+
+                            </p>
+
+                        </div>
+
+
+                        <a
+                            href="{{ url_for(
+                                'main.dataset_preview',
+                                dataset_id=dataset.id
+                            ) }}"
+                            class="view-dataset-link"
+                        >
+                            View
+                        </a>
+                        
+                       <button
+                            type="button"
+                            class="delete-dataset-button"
+                            onclick="deleteDataset({{ dataset.id }}, '{{ dataset.source_name }}')">
+                            Delete
+                        </button>
+
+                    </label>
+
+                {% endfor %}
+
+            </div>
+
+
+            <div class="selection-actions">
+
+                <button
+                    type="submit"
+                    class="select-button"
+                >
+                    Use Selected Datasets
+                </button>
+
+            </div>
+
+        </form>
+
+
+        {% if selected_dataset_ids %}
+
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'main.clear_dataset_selection'
+                ) }}"
+            >
+
+                <button
+                    type="submit"
+                    class="clear-button"
+                >
+                    Clear Selection
+                </button>
+
+            </form>
+
+        {% endif %}
+
+
+    {% else %}
+
+        <div class="empty-state">
+
+            <h3>No datasets connected yet</h3>
+
+            <p>
+                Add a data source above to begin.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<script>
+
+function deleteDataset(datasetId, datasetName) {
+
+    const confirmed = confirm(
+        "Are you sure you want to delete '" +
+        datasetName +
+        "'?"
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    const form = document.createElement("form");
+
+    form.method = "POST";
+
+    form.action =
+        "{{ url_for('main.delete_dataset', dataset_id=0) }}"
+        .replace("/0", "/" + datasetId);
+
+    document.body.appendChild(form);
+
+    form.submit();
+}
+
+</script>
+
+{% endblock %}

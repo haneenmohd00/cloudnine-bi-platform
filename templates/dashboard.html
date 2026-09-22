@@ -1,0 +1,1371 @@
+{% extends "base.html" %}
+
+{% block title %}
+Dashboard | Cloudnine BI
+{% endblock %}
+
+{% block page_title %}
+Dashboard
+{% endblock %}
+
+{% block content %}
+
+<style>
+
+.dashboard-page {
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 8px 4px 40px;
+}
+
+.dashboard-header {
+    background: linear-gradient(
+        135deg,
+        #ffffff 0%,
+        #fff7fb 100%
+    );
+
+    border-radius: 20px;
+    padding: 28px 32px;
+    margin-bottom: 22px;
+
+    border: 1px solid #f3d6e5;
+    box-shadow: 0 8px 28px rgba(30, 30, 30, 0.06);
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.dashboard-header h1 {
+    margin: 0 0 7px;
+    font-size: 30px;
+    font-weight: 700;
+    color: #242424;
+}
+
+.dashboard-header p {
+    margin: 0;
+    color: #777;
+    font-size: 15px;
+}
+
+.dashboard-source {
+    background: #ffffff;
+    border: 1px solid #f0c9dc;
+    border-radius: 12px;
+    padding: 11px 16px;
+    color: #c9367d;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+
+/* ============================= */
+/* KPI SECTION */
+/* ============================= */
+
+.dashboard-kpis {
+    display: grid;
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.dashboard-kpi {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 22px 24px;
+
+    border: 1px solid #eeeeee;
+    box-shadow: 0 7px 24px rgba(0, 0, 0, 0.055);
+
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-kpi::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: #cf3d82;
+}
+
+.dashboard-kpi-label {
+    display: block;
+    font-size: 13px;
+    color: #777;
+    margin-bottom: 10px;
+}
+
+.dashboard-kpi-value {
+    font-size: 29px;
+    font-weight: 700;
+    color: #c9367d;
+    margin: 0;
+}
+
+.dashboard-kpi-subtitle {
+    display: block;
+    margin-top: 7px;
+    font-size: 11px;
+    color: #999;
+}
+
+
+/* ============================= */
+/* AI EXECUTIVE BRIEF */
+/* ============================= */
+
+.dashboard-ai-card {
+    background:
+        linear-gradient(
+            135deg,
+            #fff8fc,
+            #ffffff
+        );
+
+    border: 1px solid #f0cade;
+    border-left: 5px solid #cf3d82;
+
+    border-radius: 20px;
+    padding: 25px 28px;
+
+    margin-bottom: 22px;
+
+    box-shadow: 0 8px 28px rgba(30, 30, 30, 0.06);
+}
+
+.dashboard-ai-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 8px;
+}
+
+.dashboard-ai-header h2 {
+    margin: 0;
+    font-size: 21px;
+    color: #292929;
+}
+
+.dashboard-ai-badge {
+    font-size: 12px;
+    color: #c9367d;
+    font-weight: 600;
+}
+
+.dashboard-ai-description {
+    color: #777;
+    font-size: 14px;
+    margin: 0 0 18px;
+}
+
+.ai-analysis-button {
+    border: none;
+    background: #cf3d82;
+    color: white;
+
+    padding: 11px 20px;
+    border-radius: 10px;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.ai-analysis-button:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.ai-analysis-button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.dashboard-ai-loading {
+    display: none;
+    margin-top: 18px;
+    color: #777;
+    font-size: 14px;
+}
+
+.dashboard-ai-result {
+    display: none;
+
+    margin-top: 20px;
+    padding: 20px 22px;
+
+    background: #ffffff;
+    border-radius: 14px;
+
+    border: 1px solid #f1e2ea;
+
+    color: #333;
+    line-height: 1.7;
+    font-size: 14px;
+}
+
+.dashboard-ai-result h1,
+.dashboard-ai-result h2,
+.dashboard-ai-result h3 {
+    color: #c9367d;
+    margin-top: 18px;
+    margin-bottom: 8px;
+}
+
+.dashboard-ai-result h1:first-child,
+.dashboard-ai-result h2:first-child,
+.dashboard-ai-result h3:first-child {
+    margin-top: 0;
+}
+
+.dashboard-ai-result ul,
+.dashboard-ai-result ol {
+    padding-left: 22px;
+}
+
+.dashboard-ai-result strong {
+    color: #292929;
+}
+
+
+/* ============================= */
+/* CHART GRID */
+/* ============================= */
+
+.dashboard-chart-grid {
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1.45fr)
+        minmax(0, 1fr);
+
+    gap: 20px;
+    margin-bottom: 22px;
+}
+
+.dashboard-card {
+    background: #ffffff;
+    border-radius: 20px;
+
+    border: 1px solid #eeeeee;
+    box-shadow: 0 7px 25px rgba(0, 0, 0, 0.055);
+
+    padding: 23px 25px;
+}
+
+.dashboard-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-bottom: 18px;
+}
+
+.dashboard-card-header h2 {
+    margin: 0;
+    font-size: 19px;
+    color: #292929;
+}
+
+.dashboard-card-header span {
+    font-size: 12px;
+    color: #999;
+}
+
+.dashboard-chart-container {
+    position: relative;
+    width: 100%;
+    height: 330px;
+}
+
+
+/* ============================= */
+/* OBSERVATIONS */
+/* ============================= */
+
+.observations-card {
+    background: #ffffff;
+    border-radius: 20px;
+
+    border: 1px solid #eeeeee;
+    box-shadow: 0 7px 25px rgba(0, 0, 0, 0.055);
+
+    padding: 25px;
+}
+
+.observations-card h2 {
+    margin: 0 0 18px;
+    font-size: 20px;
+    color: #292929;
+}
+
+.observation-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 14px;
+}
+
+.observation {
+    padding: 17px 18px;
+
+    background: #fff8fc;
+    border-radius: 13px;
+
+    border: 1px solid #f2dce8;
+}
+
+.observation-title {
+    font-size: 12px;
+    color: #c9367d;
+    font-weight: 700;
+
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+
+    margin-bottom: 7px;
+}
+
+.observation-text {
+    font-size: 14px;
+    line-height: 1.55;
+    color: #555;
+}
+
+
+/* ============================= */
+/* EMPTY / ERROR */
+/* ============================= */
+
+.dashboard-message {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 50px 30px;
+
+    text-align: center;
+
+    border: 1px solid #eeeeee;
+}
+
+.dashboard-message h2 {
+    margin-bottom: 10px;
+}
+
+.dashboard-message p {
+    color: #777;
+}
+
+
+/* ============================= */
+/* RESPONSIVE */
+/* ============================= */
+
+@media (max-width: 1100px) {
+
+    .dashboard-kpis {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-chart-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .observation-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+@media (max-width: 650px) {
+
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .dashboard-kpis {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-kpi-value {
+        font-size: 25px;
+    }
+
+}
+
+</style>
+
+
+<div class="dashboard-page">
+
+{% if dashboard_data %}
+
+    {% for data in dashboard_data %}
+
+        {% if data.error %}
+
+            <div class="dashboard-message">
+
+                <h2>
+                    {{ data.dataset_name }}
+                </h2>
+
+                <p>
+                    Unable to analyse this dataset.
+                </p>
+
+                <p>
+                    {{ data.error }}
+                </p>
+
+            </div>
+
+        {% else %}
+
+
+        <!-- ========================================= -->
+        <!-- DASHBOARD HEADER -->
+        <!-- ========================================= -->
+
+        <div class="dashboard-header">
+
+            <div>
+
+                <h1>
+                    📊 Business Performance
+                </h1>
+
+                <p>
+                    Executive view of the selected business data.
+                </p>
+
+            </div>
+
+            <div class="dashboard-source">
+
+                {{ data.dataset_name }}
+
+            </div>
+
+        </div>
+
+
+        <!-- ========================================= -->
+        <!-- KPI CARDS -->
+        <!-- ========================================= -->
+
+        <div class="dashboard-kpis">
+
+
+            <div class="dashboard-kpi">
+
+                <span class="dashboard-kpi-label">
+                    Total Revenue
+                </span>
+
+                <h2 class="dashboard-kpi-value">
+
+                    {% if data.total_revenue is not none %}
+
+                        ₹{{ "{:,.2f}".format(
+                            data.total_revenue
+                        ) }}
+
+                    {% else %}
+
+                        N/A
+
+                    {% endif %}
+
+                </h2>
+
+                {% if data.revenue_column %}
+
+                    <span class="dashboard-kpi-subtitle">
+                        Based on {{ data.revenue_column }}
+                    </span>
+
+                {% endif %}
+
+            </div>
+
+
+            <div class="dashboard-kpi">
+
+                <span class="dashboard-kpi-label">
+                    Transactions
+                </span>
+
+                <h2 class="dashboard-kpi-value">
+
+                    {{ "{:,}".format(data.rows) }}
+
+                </h2>
+
+                <span class="dashboard-kpi-subtitle">
+                    Recorded transactions
+                </span>
+
+            </div>
+
+
+            <div class="dashboard-kpi">
+
+                <span class="dashboard-kpi-label">
+                    Average Transaction
+                </span>
+
+                <h2 class="dashboard-kpi-value">
+
+                    {% if data.average_transaction is not none %}
+
+                        ₹{{ "{:,.2f}".format(
+                            data.average_transaction
+                        ) }}
+
+                    {% else %}
+
+                        N/A
+
+                    {% endif %}
+
+                </h2>
+
+                <span class="dashboard-kpi-subtitle">
+                    Average value per transaction
+                </span>
+
+            </div>
+
+
+            <div class="dashboard-kpi">
+
+                <span class="dashboard-kpi-label">
+                    Quantity
+                </span>
+
+                <h2 class="dashboard-kpi-value">
+
+                    {% if data.total_quantity is not none %}
+
+                        {{ "{:,.0f}".format(
+                            data.total_quantity
+                        ) }}
+
+                    {% else %}
+
+                        N/A
+
+                    {% endif %}
+
+                </h2>
+
+                {% if data.quantity_column %}
+
+                    <span class="dashboard-kpi-subtitle">
+                        Based on {{ data.quantity_column }}
+                    </span>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+
+        <!-- ========================================= -->
+        <!-- AI EXECUTIVE BRIEF -->
+        <!-- ========================================= -->
+
+        <div class="dashboard-ai-card">
+
+            <div class="dashboard-ai-header">
+
+                <h2>
+                    🤖 AI Executive Brief
+                </h2>
+
+                <span class="dashboard-ai-badge">
+                    Powered by local AI
+                </span>
+
+            </div>
+
+            <p class="dashboard-ai-description">
+                Understand what the dashboard is telling you,
+                which areas stand out, and where attention may
+                be required.
+            </p>
+
+            <button
+                type="button"
+                class="ai-analysis-button"
+                id="generateDashboardAI{{ loop.index0 }}"
+            >
+                Generate AI Analysis
+            </button>
+
+            <div
+                class="dashboard-ai-loading"
+                id="dashboardAILoading{{ loop.index0 }}"
+            >
+                🤖 Analysing dashboard data...
+            </div>
+
+            <div
+                class="dashboard-ai-result"
+                id="dashboardAIResult{{ loop.index0 }}"
+            >
+            </div>
+
+        </div>
+
+
+        <!-- ========================================= -->
+        <!-- CHARTS -->
+        <!-- ========================================= -->
+
+        <div class="dashboard-chart-grid">
+
+
+            <!-- REVENUE TREND -->
+
+            {% if data.time_performance %}
+
+            <div class="dashboard-card">
+
+                <div class="dashboard-card-header">
+
+                    <h2>
+                        📈 Revenue Trend
+                    </h2>
+
+                    <span>
+                        Time performance
+                    </span>
+
+                </div>
+
+                {% if data.time_performance|length > 1 %}
+
+                    <div class="dashboard-chart-container">
+
+                        <canvas
+                            id="trendChart{{ loop.index0 }}"
+                        ></canvas>
+
+                    </div>
+
+                {% else %}
+
+                    <div class="dashboard-chart-container"
+                         style="
+                         display:flex;
+                         align-items:center;
+                         justify-content:center;
+                         color:#888;
+                         text-align:center;
+                         ">
+
+                        Not enough time periods available
+                        to display a meaningful trend.
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+            {% endif %}
+
+
+            <!-- REVENUE DISTRIBUTION -->
+
+            {% if data.dimension_performance %}
+
+            <div class="dashboard-card">
+
+                <div class="dashboard-card-header">
+
+                    <h2>
+                        📊 Revenue Distribution
+                    </h2>
+
+                    <span>
+                        By {{ data.dimension_column }}
+                    </span>
+
+                </div>
+
+                <div class="dashboard-chart-container">
+
+                    <canvas
+                        id="dimensionChart{{ loop.index0 }}"
+                    ></canvas>
+
+                </div>
+
+            </div>
+
+            {% endif %}
+
+        </div>
+
+
+        <!-- ========================================= -->
+        <!-- KEY OBSERVATIONS -->
+        <!-- ========================================= -->
+
+        {% if data.dimension_performance %}
+
+            {% set dimension_items =
+                data.dimension_performance.items() | list %}
+
+            {% if dimension_items|length > 0 %}
+
+                {% set top_item =
+                    dimension_items | sort(attribute=1, reverse=true) | first %}
+
+                <div class="observations-card">
+
+                    <h2>
+                        💡 Key Performance Observations
+                    </h2>
+
+                    <div class="observation-grid">
+
+                        <div class="observation">
+
+                            <div class="observation-title">
+                                Strongest Area
+                            </div>
+
+                            <div class="observation-text">
+
+                                <strong>
+                                    {{ top_item[0] }}
+                                </strong>
+                                generated
+                                <strong>
+                                    ₹{{ "{:,.2f}".format(top_item[1]) }}
+                                </strong>
+                                in revenue.
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="observation">
+
+                            <div class="observation-title">
+                                Revenue Coverage
+                            </div>
+
+                            <div class="observation-text">
+
+                                The dashboard highlights
+                                {{ dimension_items|length }}
+                                {{ data.dimension_column or "business" }}
+                                categories for comparison.
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="observation">
+
+                            <div class="observation-title">
+                                Management Focus
+                            </div>
+
+                            <div class="observation-text">
+
+                                Use the AI Executive Brief to
+                                identify significant patterns,
+                                potential concerns and areas
+                                requiring further investigation.
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            {% endif %}
+
+        {% endif %}
+
+
+        <!-- ========================================= -->
+        <!-- CHART DATA -->
+        <!-- ========================================= -->
+
+        {% if data.time_performance and data.time_performance|length > 1 %}
+
+        <script type="application/json"
+                id="trendData{{ loop.index0 }}">
+        {
+            "labels":
+                {{ data.time_performance.keys()
+                    | list
+                    | tojson }},
+
+            "values":
+                {{ data.time_performance.values()
+                    | list
+                    | tojson }}
+        }
+        </script>
+
+        {% endif %}
+
+
+        {% if data.dimension_performance %}
+
+        <script type="application/json"
+                id="dimensionData{{ loop.index0 }}">
+        {
+            "labels":
+                {{ data.dimension_performance.keys()
+                    | list
+                    | tojson }},
+
+            "values":
+                {{ data.dimension_performance.values()
+                    | list
+                    | tojson }}
+        }
+        </script>
+
+        {% endif %}
+
+
+        {% endif %}
+
+    {% endfor %}
+
+
+{% else %}
+
+    <div class="dashboard-message">
+
+        <h2>
+            No Dataset Selected
+        </h2>
+
+        <p>
+            Select one or more datasets from the
+            Datasets section to generate your dashboard.
+        </p>
+
+        <a
+            href="{{ url_for('main.datasets') }}"
+            class="overview-button"
+        >
+            Go to Datasets
+        </a>
+
+    </div>
+
+{% endif %}
+
+</div>
+
+
+<!-- ========================================= -->
+<!-- CHART.JS -->
+<!-- ========================================= -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+{% if dashboard_data %}
+
+{% for data in dashboard_data %}
+
+{% if not data.error %}
+
+
+<script>
+
+(function () {
+
+    const index = "{{ loop.index0 }}";
+
+
+    /* ========================================= */
+    /* REVENUE TREND */
+    /* ========================================= */
+
+    const trendElement =
+        document.getElementById(
+            "trendData" + index
+        );
+
+    const trendCanvas =
+        document.getElementById(
+            "trendChart" + index
+        );
+
+
+    if (
+        trendElement &&
+        trendCanvas
+    ) {
+
+        const trendData =
+            JSON.parse(
+                trendElement.textContent
+            );
+
+
+        new Chart(
+            trendCanvas,
+            {
+
+                type: "line",
+
+                data: {
+
+                    labels:
+                        trendData.labels,
+
+                    datasets: [
+
+                        {
+
+                            label:
+                                "Revenue",
+
+                            data:
+                                trendData.values,
+
+                            borderWidth: 3,
+
+                            pointRadius: 4,
+
+                            pointHoverRadius: 7,
+
+                            tension: 0.35,
+
+                            fill: false,
+
+                            borderColor:
+                                "#cf3d82",
+
+                            backgroundColor:
+                                "#cf3d82"
+
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    interaction: {
+
+                        intersect: false,
+
+                        mode: "index"
+
+                    },
+
+                    plugins: {
+
+                        legend: {
+
+                            display: false
+
+                        },
+
+                        tooltip: {
+
+                            callbacks: {
+
+                                label:
+                                    function(context) {
+
+                                        return (
+                                            " Revenue: ₹" +
+                                            Number(
+                                                context.raw
+                                            ).toLocaleString(
+                                                "en-IN",
+                                                {
+                                                    minimumFractionDigits: 2
+                                                }
+                                            )
+                                        );
+
+                                    }
+
+                            }
+
+                        }
+
+                    },
+
+                    scales: {
+
+                        x: {
+
+                            grid: {
+
+                                display: false
+
+                            }
+
+                        },
+
+                        y: {
+
+                            beginAtZero: true,
+
+                            ticks: {
+
+                                callback:
+                                    function(value) {
+
+                                        return "₹" +
+                                            Number(value)
+                                                .toLocaleString(
+                                                    "en-IN"
+                                                );
+
+                                    }
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        );
+
+    }
+
+
+    /* ========================================= */
+    /* REVENUE DISTRIBUTION */
+    /* ========================================= */
+
+    const dimensionElement =
+        document.getElementById(
+            "dimensionData" + index
+        );
+
+    const dimensionCanvas =
+        document.getElementById(
+            "dimensionChart" + index
+        );
+
+
+    if (
+        dimensionElement &&
+        dimensionCanvas
+    ) {
+
+        const dimensionData =
+            JSON.parse(
+                dimensionElement.textContent
+            );
+
+
+        new Chart(
+            dimensionCanvas,
+            {
+
+                type: "bar",
+
+                data: {
+
+                    labels:
+                        dimensionData.labels,
+
+                    datasets: [
+
+                        {
+
+                            label:
+                                "Revenue",
+
+                            data:
+                                dimensionData.values,
+
+                            borderRadius: 7,
+
+                            borderSkipped: false,
+
+                            backgroundColor:
+                                "#cf3d82"
+
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    indexAxis: "y",
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    plugins: {
+
+                        legend: {
+
+                            display: false
+
+                        },
+
+                        tooltip: {
+
+                            callbacks: {
+
+                                label:
+                                    function(context) {
+
+                                        return (
+                                            " Revenue: ₹" +
+                                            Number(
+                                                context.raw
+                                            ).toLocaleString(
+                                                "en-IN",
+                                                {
+                                                    minimumFractionDigits: 2
+                                                }
+                                            )
+                                        );
+
+                                    }
+
+                            }
+
+                        }
+
+                    },
+
+                    scales: {
+
+                        x: {
+
+                            beginAtZero: true,
+
+                            ticks: {
+
+                                callback:
+                                    function(value) {
+
+                                        return "₹" +
+                                            Number(value)
+                                                .toLocaleString(
+                                                    "en-IN"
+                                                );
+
+                                    }
+
+                            }
+
+                        },
+
+                        y: {
+
+                            grid: {
+
+                                display: false
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        );
+
+    }
+
+
+})();
+
+</script>
+
+
+<!-- ========================================= -->
+<!-- AI ANALYSIS -->
+<!-- ========================================= -->
+
+<script>
+
+(function () {
+
+    const index = "{{ loop.index0 }}";
+
+    const button =
+        document.getElementById(
+            "generateDashboardAI" + index
+        );
+
+    const loading =
+        document.getElementById(
+            "dashboardAILoading" + index
+        );
+
+    const result =
+        document.getElementById(
+            "dashboardAIResult" + index
+        );
+
+
+    if (!button) {
+
+        return;
+
+    }
+
+
+    button.addEventListener(
+        "click",
+        async function () {
+
+            button.disabled = true;
+
+            button.innerText =
+                "Analysing...";
+
+            loading.style.display =
+                "block";
+
+            result.style.display =
+                "none";
+
+            result.innerHTML =
+                "";
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "{{ url_for(
+                            'main.dashboard_ai_analysis'
+                        ) }}",
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            }
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                if (data.success) {
+
+                    result.innerHTML =
+                        data.summary;
+
+                    result.style.display =
+                        "block";
+
+                }
+
+                else {
+
+                    result.innerHTML =
+                        "<p>" +
+                        data.message +
+                        "</p>";
+
+                    result.style.display =
+                        "block";
+
+                }
+
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    "Dashboard AI error:",
+                    error
+                );
+
+                result.innerHTML =
+                    "<p>Unable to generate AI analysis.</p>";
+
+                result.style.display =
+                    "block";
+
+            }
+
+
+            finally {
+
+                loading.style.display =
+                    "none";
+
+                button.disabled =
+                    false;
+
+                button.innerText =
+                    "Generate AI Analysis";
+
+            }
+
+        }
+    );
+
+
+})();
+
+</script>
+
+
+{% endif %}
+
+{% endfor %}
+
+{% endif %}
+
+{% endblock %}

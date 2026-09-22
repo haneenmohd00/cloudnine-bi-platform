@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}Cloudnine BI Platform{% endblock %}</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>Cloudnine</h2>
+                <span>Business Intelligence</span>
+            </div>
+
+           <nav class="nav-menu">
+
+    <a href="{{ url_for('main.home') }}">
+        🏠 Home
+    </a>
+
+    <a href="{{ url_for('main.datasets') }}">
+        🗂️ Datasets
+    </a>
+
+    <a href="{{ url_for('main.ai_assistant') }}">
+        🤖 AI Assistant
+    </a>
+
+    <a href="{{ url_for('main.dashboard') }}">
+        📊 Dashboard
+    </a>
+
+    <!-- <a href="{{ url_for('main.insights') }}">
+        💡 Insights
+    </a> -->
+
+    <a href="{{ url_for('main.report_generator') }}">
+        📄 Report Generator
+    </a>
+
+</nav>
+
+            <div class="user-section">
+                <span>Welcome</span>
+                <strong>Demo User</strong>
+            </div>
+
+        </aside>
+
+        <main class="main-content">
+
+            <header class="topbar">
+                <h1>{% block page_title %}Overview{% endblock %}</h1>
+            </header>
+
+            <section class="page-content">
+                {% block content %}{% endblock %}
+            </section>
+
+        </main>
+
+    </div>
+
+</body>
+</html>

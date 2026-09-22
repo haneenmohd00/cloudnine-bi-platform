@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}
+AI Assistant | Cloudnine BI
+{% endblock %}
+
+
+{% block page_title %}
+AI Assistant
+{% endblock %}
+
+
+{% block content %}
+
+<div class="ai-page">
+
+    <div class="welcome-section">
+
+        <h2>Cloudnine AI Assistant</h2>
+
+        <p>
+            Ask questions about your business data, analytics,
+            KPIs, and reports.
+        </p>
+
+    </div>
+
+
+    <div class="ai-chat-card">
+
+        <div class="chat-header">
+
+            <div>
+                <h2>🤖 Ask the AI</h2>
+
+                <!-- <p>
+                    Powered locally by Qwen2.5 through Ollama.
+                </p> -->
+            </div>
+
+            <span class="ai-status">
+                ● Local AI Online
+            </span>
+
+        </div>
+
+
+        {% if question %}
+
+        <div class="chat-message user-message">
+
+            <div class="message-label">
+                You
+            </div>
+
+            <div class="message-content">
+                {{ question }}
+            </div>
+
+        </div>
+
+        {% endif %}
+
+
+        {% if answer %}
+
+        <div class="chat-message assistant-message">
+
+            <div class="message-label">
+                🤖 Cloudnine AI Assistant
+            </div>
+
+            <div class="message-content">
+                {{ answer }}
+            </div>
+
+        </div>
+
+        {% endif %}
+
+
+        {% if not answer %}
+
+        <div class="ai-empty-state">
+
+            <div class="ai-icon">
+                🤖
+            </div>
+
+            <h3>How can I help you?</h3>
+
+            <p>
+                Ask me about business analytics or your uploaded data.
+            </p>
+
+        </div>
+
+        {% endif %}
+
+
+        <form method="POST" class="ai-question-form">
+
+            <textarea
+                name="question"
+                placeholder="Ask a question..."
+                required
+            ></textarea>
+
+            <button type="submit">
+                Ask AI →
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

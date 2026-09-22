@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Dataset Preview | Cloudnine BI{% endblock %}
+
+{% block page_title %}Dataset Preview{% endblock %}
+
+{% block content %}
+
+<div class="welcome-section">
+
+    <h2>{{ dataset.original_filename }}</h2>
+
+    <p>Dataset uploaded successfully.</p>
+
+</div>
+
+<div class="dataset-summary">
+
+    <h2>Dataset Summary</h2>
+
+    <div class="summary-cards">
+
+        <div class="summary-card">
+            <h3>{{ metadata.rows }}</h3>
+            <p>Total Rows</p>
+        </div>
+
+        <div class="summary-card">
+            <h3>{{ metadata.columns_count }}</h3>
+            <p>Total Columns</p>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="dataset-columns">
+
+    <h2>Detected Columns</h2>
+
+    <div class="columns-grid">
+
+        {% for column in metadata.columns %}
+            <div class="column-item">
+                {{ column }}
+            </div>
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endblock %}

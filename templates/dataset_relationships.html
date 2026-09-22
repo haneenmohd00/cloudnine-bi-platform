@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}
+Dataset Relationships | Cloudnine BI
+{% endblock %}
+
+{% block page_title %}
+Dataset Relationships
+{% endblock %}
+
+{% block content %}
+
+<div class="overview-page">
+
+    <!-- PAGE HEADER -->
+
+    <div class="welcome-section">
+
+        <h2>🔗 Dataset Relationships</h2>
+
+        <p>
+            Possible relationships detected between
+            your selected datasets.
+        </p>
+
+    </div>
+
+
+    {% if selected_datasets|length < 2 %}
+
+        <!-- NOT ENOUGH DATASETS -->
+
+        <div class="overview-card">
+
+            <h3>
+                Select at least two datasets
+            </h3>
+
+            <p>
+                Go to the Datasets section and select
+                multiple datasets to detect possible
+                relationships between them.
+            </p>
+
+        </div>
+
+
+    {% else %}
+
+
+        <!-- SELECTED DATASETS -->
+
+        <div class="overview-card">
+
+            <h3>
+                Selected Datasets
+            </h3>
+
+            {% for dataset in selected_datasets %}
+
+                <div class="dataset-summary-row">
+
+                    <span>
+                        {{ dataset.source_name }}
+                    </span>
+
+                    <span>
+                        {{ "{:,}".format(dataset.row_count) }}
+                        rows
+                    </span>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+
+        <!-- RELATIONSHIPS -->
+
+        {% if relationships %}
+
+            <div class="overview-card">
+
+                <h3>
+                    🔍 Possible Relationships
+                </h3>
+
+
+                {% for relationship in relationships %}
+
+                    <div class="dataset-summary-row">
+
+                        <div>
+
+                            <!-- DATASET + COLUMN RELATIONSHIP -->
+
+                            <strong>
+                                {{ relationship.left_dataset_name }}
+                            </strong>
+
+                            <span>
+                                .{{ relationship.left_column }}
+                            </span>
+
+                            ↔
+
+                            <strong>
+                                {{ relationship.right_dataset_name }}
+                            </strong>
+
+                            <span>
+                                .{{ relationship.right_column }}
+                            </span>
+
+
+                            <br>
+
+
+                            <!-- RELATIONSHIP DETAILS -->
+
+                            <small>
+
+                                {{ relationship.common_values }}
+                                common values
+
+                                ·
+
+                                {{ relationship.overlap_percentage }}%
+                                overlap
+
+                                ·
+
+                                Confidence:
+                                {{ relationship.confidence }}%
+
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+
+        {% else %}
+
+
+            <!-- NO RELATIONSHIP -->
+
+            <div class="overview-card">
+
+                <h3>
+                    No reliable relationship detected
+                </h3>
+
+                <p>
+                    No columns with sufficient matching
+                    values were found between the selected
+                    datasets.
+                </p>
+
+            </div>
+
+        {% endif %}
+
+    {% endif %}
+
+</div>
+
+{% endblock %}\
